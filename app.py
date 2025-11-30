@@ -1,296 +1,262 @@
-{
- "cells": [
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "fa3a7df4-9078-4981-b450-9f97923d960d",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "import streamlit as st\n",
-    "import gspread\n",
-    "from google.oauth2.service_account import Credentials\n",
-    "from datetime import datetime\n",
-    "\n",
-    "# -------------------------------\n",
-    "# LOAD CUSTOM THEME (MAROON-GOLD)\n",
-    "# -------------------------------\n",
-    "def load_css():\n",
-    "    st.markdown(\"\"\"\n",
-    "        <style>\n",
-    "\n",
-    "        .stApp {\n",
-    "            background-color: #fff8e6;\n",
-    "        }\n",
-    "\n",
-    "        section[data-testid=\"stSidebar\"] {\n",
-    "            background-color: #800000 !important;\n",
-    "        }\n",
-    "\n",
-    "        section[data-testid=\"stSidebar\"] span,\n",
-    "        section[data-testid=\"stSidebar\"] label {\n",
-    "            color: white !important;\n",
-    "            font-weight: 600;\n",
-    "        }\n",
-    "\n",
-    "        .stButton>button {\n",
-    "            background-color: #800000;\n",
-    "            color: white;\n",
-    "            border-radius: 8px;\n",
-    "            padding: 10px 18px;\n",
-    "            border: none;\n",
-    "            font-size: 16px;\n",
-    "        }\n",
-    "        .stButton>button:hover {\n",
-    "            background-color: #b30000;\n",
-    "        }\n",
-    "\n",
-    "        h1, h2, h3 {\n",
-    "            color: #800000 !important;\n",
-    "        }\n",
-    "\n",
-    "        .footer {\n",
-    "            position: fixed;\n",
-    "            left: 0;\n",
-    "            bottom: 0;\n",
-    "            width: 100%;\n",
-    "            background-color: #800000;\n",
-    "            color: white;\n",
-    "            text-align: center;\n",
-    "            padding: 6px;\n",
-    "            font-size: 14px;\n",
-    "        }\n",
-    "\n",
-    "        </style>\n",
-    "        \"\"\", unsafe_allow_html=True)\n",
-    "\n",
-    "load_css()\n",
-    "\n",
-    "# -------------------------------\n",
-    "# GOOGLE SHEETS CONNECTION\n",
-    "# -------------------------------\n",
-    "SCOPE = [\n",
-    "    \"https://www.googleapis.com/auth/spreadsheets\",\n",
-    "    \"https://www.googleapis.com/auth/drive\",\n",
-    "]\n",
-    "\n",
-    "@st.cache_resource\n",
-    "def connect_gsheet():\n",
-    "    creds = Credentials.from_service_account_info(\n",
-    "        st.secrets[\"gcp_service_account\"], scopes=SCOPE\n",
-    "    )\n",
-    "    client = gspread.authorize(creds)\n",
-    "    sheet = client.open_by_key(st.secrets[\"G_SHEET_ID\"])\n",
-    "    return sheet\n",
-    "\n",
-    "def ws(name):\n",
-    "    return connect_gsheet().worksheet(name)\n",
-    "\n",
-    "# -------------------------------\n",
-    "# HOME PAGE\n",
-    "# -------------------------------\n",
-    "def home():\n",
-    "    st.image(\"updated logo.png\", width=360)\n",
-    "\n",
-    "    st.markdown(\"\"\"\n",
-    "        <div style='text-align:center; margin-top:-15px;'>\n",
-    "            <h1><b>SPECTRA 2025</b></h1>\n",
-    "            <h2 style=\"color:#cc9900;\"><i>Talent Meets Opportunity</i></h2>\n",
-    "\n",
-    "            <p style=\"font-size:20px; margin-top:15px;\">\n",
-    "                <b>45th Annual Day</b><br>\n",
-    "                <b>19th & 20th December, 2025</b><br>\n",
-    "                St. Gregorios Higher Secondary School\n",
-    "            </p>\n",
-    "        </div>\n",
-    "        \"\"\", unsafe_allow_html=True)\n",
-    "\n",
-    "    st.markdown(\"\"\"\n",
-    "        <marquee style=\"background:#800000; color:white; padding:8px; font-size:18px; border-radius:5px;\">\n",
-    "            📢 Welcome to SPECTRA 2025 – Registrations Open | Check Announcements for updates!\n",
-    "        </marquee>\n",
-    "    \"\"\", unsafe_allow_html=True)\n",
-    "\n",
-    "    st.markdown(\"## Quick Links\")\n",
-    "\n",
-    "    col1, col2, col3 = st.columns(3)\n",
-    "    if col1.button(\"📢 Announcements\"):\n",
-    "        st.session_state[\"page\"] = \"Announcements\"\n",
-    "    if col2.button(\"🖼 Gallery\"):\n",
-    "        st.session_state[\"page\"] = \"Gallery\"\n",
-    "    if col3.button(\"📝 Registration\"):\n",
-    "        st.session_state[\"page\"] = \"Registration\"\n",
-    "\n",
-    "    st.markdown(\"---\")\n",
-    "    st.info(\"Use the sidebar to navigate.\")\n",
-    "\n",
-    "    st.markdown(\n",
-    "        \"\"\"<div class=\"footer\">© St. Gregorios H.S. School | SPECTRA 2025</div>\"\"\",\n",
-    "        unsafe_allow_html=True\n",
-    "    )\n",
-    "\n",
-    "# -------------------------------\n",
-    "# ANNOUNCEMENTS PAGE\n",
-    "# -------------------------------\n",
-    "def announcements():\n",
-    "    st.header(\"📢 Announcements\")\n",
-    "    data = ws(\"Announcements\").get_all_records()\n",
-    "\n",
-    "    if not data:\n",
-    "        st.info(\"No announcements yet.\")\n",
-    "    else:\n",
-    "        st.markdown(\"### Latest Updates\")\n",
-    "        for row in reversed(data):\n",
-    "            st.markdown(f\"\"\"\n",
-    "                <div style=\"background:#fff1d6; padding:15px; border-left:6px solid #800000; border-radius:6px; margin-bottom:12px;\">\n",
-    "                    <h4 style=\"color:#800000;\">{row.get('title','')}</h4>\n",
-    "                    <p>{row.get('message','')}</p>\n",
-    "                    <span style=\"font-size:12px; color:#555;\">{row.get('timestamp','')}</span>\n",
-    "                </div>\n",
-    "            \"\"\", unsafe_allow_html=True)\n",
-    "\n",
-    "    st.markdown(\"---\")\n",
-    "    st.subheader(\"🔐 Admin — Add Announcement\")\n",
-    "\n",
-    "    pin = st.text_input(\"Enter Admin PIN\", type=\"password\")\n",
-    "\n",
-    "    if pin == st.secrets[\"ADMIN_PIN\"]:\n",
-    "        with st.form(\"ann_form\"):\n",
-    "            title = st.text_input(\"Title\")\n",
-    "            msg = st.text_area(\"Message\")\n",
-    "            aud = st.text_input(\"Audience (optional)\")\n",
-    "            post = st.form_submit_button(\"Post Announcement\")\n",
-    "\n",
-    "        if post:\n",
-    "            if not title or not msg:\n",
-    "                st.error(\"Title and message are required.\")\n",
-    "            else:\n",
-    "                ts = datetime.now().strftime(\"%Y-%m-%d %H:%M:%S\")\n",
-    "                ws(\"Announcements\").append_row([ts, title, msg, aud])\n",
-    "                st.success(\"Announcement added!\")\n",
-    "                st.experimental_rerun()\n",
-    "    else:\n",
-    "        st.caption(\"Enter Admin PIN to post announcements.\")\n",
-    "\n",
-    "# -------------------------------\n",
-    "# GALLERY PAGE\n",
-    "# -------------------------------\n",
-    "def gallery():\n",
-    "    st.header(\"🖼 Gallery\")\n",
-    "    data = ws(\"Gallery\").get_all_records()\n",
-    "\n",
-    "    if data:\n",
-    "        classes = [\"All\"] + sorted({r[\"class\"] for r in data if r[\"class\"]})\n",
-    "        sel = st.selectbox(\"Filter by Class\", classes)\n",
-    "\n",
-    "        filtered = data if sel == \"All\" else [r for r in data if r[\"class\"] == sel]\n",
-    "\n",
-    "        for r in filtered:\n",
-    "            st.markdown(f\"\"\"\n",
-    "                <div style=\"background:#fff1d6; padding:15px; border-radius:10px; border:2px solid #800000; margin-bottom:15px;\">\n",
-    "                    <img src=\"{r['image_url']}\" style=\"width:100%; border-radius:10px;\">\n",
-    "                    <h4 style=\"color:#800000;\">{r['title']}</h4>\n",
-    "                    <p><b>Class:</b> {r['class']}</p>\n",
-    "                    <span style=\"font-size:12px; color:#555;\">{r['timestamp']}</span>\n",
-    "                </div>\n",
-    "            \"\"\", unsafe_allow_html=True)\n",
-    "    else:\n",
-    "        st.info(\"Gallery is empty.\")\n",
-    "\n",
-    "    st.markdown(\"---\")\n",
-    "    st.subheader(\"🔐 Admin — Add Photo\")\n",
-    "\n",
-    "    pin = st.text_input(\"Admin PIN\", type=\"password\")\n",
-    "\n",
-    "    if pin == st.secrets[\"ADMIN_PIN\"]:\n",
-    "        with st.form(\"pic_form\"):\n",
-    "            title = st.text_input(\"Caption\")\n",
-    "            cls = st.selectbox(\"Class\", [\"6\",\"7\",\"8\",\"9\",\"10\",\"11\",\"12\"])\n",
-    "            img = st.text_input(\"Image URL (from Google Drive)\")\n",
-    "            add = st.form_submit_button(\"Add Photo\")\n",
-    "\n",
-    "        if add:\n",
-    "            if not img:\n",
-    "                st.error(\"Image URL is required.\")\n",
-    "            else:\n",
-    "                ts = datetime.now().strftime(\"%Y-%m-%d %H:%M:%S\")\n",
-    "                ws(\"Gallery\").append_row([ts, title, cls, img])\n",
-    "                st.success(\"Photo added!\")\n",
-    "                st.experimental_rerun()\n",
-    "    else:\n",
-    "        st.caption(\"Enter Admin PIN to upload.\")\n",
-    "\n",
-    "# -------------------------------\n",
-    "# REGISTRATION PAGE\n",
-    "# -------------------------------\n",
-    "def registration():\n",
-    "    st.header(\"📝 Event Registration\")\n",
-    "    st.markdown(\"\"\"\n",
-    "        <div style=\"background:#fff1d6; padding:15px; border-left:6px solid #800000; border-radius:6px;\">\n",
-    "            Please enter correct details. Entries will be visible to coordinators.\n",
-    "        </div>\n",
-    "    \"\"\", unsafe_allow_html=True)\n",
-    "\n",
-    "    events = [\"Skit\",\"Dance\",\"Mime\",\"Volunteer\",\"Anchor\",\"Choir\",\"Special Item\"]\n",
-    "    classes = [str(i) for i in range(6, 13)]\n",
-    "    secs = [\"A\",\"B\",\"C\",\"D\",\"E\"]\n",
-    "\n",
-    "    with st.form(\"reg_form\"):\n",
-    "        name = st.text_input(\"Student Name\")\n",
-    "        col1, col2 = st.columns(2)\n",
-    "        cls = col1.selectbox(\"Class\", classes)\n",
-    "        sec = col2.selectbox(\"Section\", secs)\n",
-    "        event = st.selectbox(\"Select Item / Event\", events)\n",
-    "        phone = st.text_input(\"Contact Number (Optional)\")\n",
-    "        submit = st.form_submit_button(\"Submit\")\n",
-    "\n",
-    "    if submit:\n",
-    "        if not name:\n",
-    "            st.error(\"Student Name required.\")\n",
-    "        else:\n",
-    "            ts = datetime.now().strftime(\"%Y-%m-%d %H:%M:%S\")\n",
-    "            ws(\"Registrations\").append_row([ts, name, cls, sec, event, phone])\n",
-    "            st.success(\"Registration submitted!\")\n",
-    "            st.balloons()\n",
-    "\n",
-    "# -------------------------------\n",
-    "# MAIN APP NAVIGATION\n",
-    "# -------------------------------\n",
-    "st.sidebar.title(\"SPECTRA 2025\")\n",
-    "menu = [\"Home\",\"Announcements\",\"Gallery\",\"Registration\"]\n",
-    "\n",
-    "choice = st.sidebar.radio(\"Navigate\", menu)\n",
-    "\n",
-    "if choice == \"Home\":\n",
-    "    home()\n",
-    "elif choice == \"Announcements\":\n",
-    "    announcements()\n",
-    "elif choice == \"Gallery\":\n",
-    "    gallery()\n",
-    "elif choice == \"Registration\":\n",
-    "    registration()\n"
-   ]
-  }
- ],
- "metadata": {
-  "kernelspec": {
-   "display_name": "Python 3 (ipykernel)",
-   "language": "python",
-   "name": "python3"
-  },
-  "language_info": {
-   "codemirror_mode": {
-    "name": "ipython",
-    "version": 3
-   },
-   "file_extension": ".py",
-   "mimetype": "text/x-python",
-   "name": "python",
-   "nbconvert_exporter": "python",
-   "pygments_lexer": "ipython3",
-   "version": "3.12.4"
-  }
- },
- "nbformat": 4,
- "nbformat_minor": 5
-}
+import streamlit as st
+import gspread
+from google.oauth2.service_account import Credentials
+from datetime import datetime
+
+# -------------------------------
+# LOAD CUSTOM THEME (MAROON-GOLD)
+# -------------------------------
+def load_css():
+    st.markdown("""
+        <style>
+
+        .stApp {
+            background-color: #fff8e6;
+        }
+
+        section[data-testid="stSidebar"] {
+            background-color: #800000 !important;
+        }
+
+        section[data-testid="stSidebar"] span,
+        section[data-testid="stSidebar"] label {
+            color: white !important;
+            font-weight: 600;
+        }
+
+        .stButton>button {
+            background-color: #800000;
+            color: white;
+            border-radius: 8px;
+            padding: 10px 18px;
+            border: none;
+            font-size: 16px;
+        }
+        .stButton>button:hover {
+            background-color: #b30000;
+        }
+
+        h1, h2, h3 {
+            color: #800000 !important;
+        }
+
+        .footer {
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            background-color: #800000;
+            color: white;
+            text-align: center;
+            padding: 6px;
+            font-size: 14px;
+        }
+
+        </style>
+        """, unsafe_allow_html=True)
+
+load_css()
+
+# -------------------------------
+# GOOGLE SHEETS CONNECTION
+# -------------------------------
+SCOPE = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive",
+]
+
+@st.cache_resource
+def connect_gsheet():
+    creds = Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"], scopes=SCOPE
+    )
+    client = gspread.authorize(creds)
+    sheet = client.open_by_key(st.secrets["G_SHEET_ID"])
+    return sheet
+
+def ws(name):
+    return connect_gsheet().worksheet(name)
+
+# -------------------------------
+# HOME PAGE
+# -------------------------------
+def home():
+    st.image("updated logo.png", width=360)
+
+    st.markdown("""
+        <div style='text-align:center; margin-top:-15px;'>
+            <h1><b>SPECTRA 2025</b></h1>
+            <h2 style="color:#cc9900;"><i>Talent Meets Opportunity</i></h2>
+
+            <p style="font-size:20px; margin-top:15px;">
+                <b>45th Annual Day</b><br>
+                <b>19th & 20th December, 2025</b><br>
+                St. Gregorios Higher Secondary School
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("""
+        <marquee style="background:#800000; color:white; padding:8px; font-size:18px; border-radius:5px;">
+            📢 Welcome to SPECTRA 2025 – Registrations Open | Check Announcements for updates!
+        </marquee>
+    """, unsafe_allow_html=True)
+
+    st.markdown("## Quick Links")
+
+    col1, col2, col3 = st.columns(3)
+    if col1.button("📢 Announcements"):
+        st.session_state["page"] = "Announcements"
+    if col2.button("🖼 Gallery"):
+        st.session_state["page"] = "Gallery"
+    if col3.button("📝 Registration"):
+        st.session_state["page"] = "Registration"
+
+    st.markdown("---")
+    st.info("Use the sidebar to navigate.")
+
+    st.markdown(
+        """<div class="footer">© St. Gregorios H.S. School | SPECTTRA 2025</div>""",
+        unsafe_allow_html=True
+    )
+
+# -------------------------------
+# ANNOUNCEMENTS PAGE
+# -------------------------------
+def announcements():
+    st.header("📢 Announcements")
+    data = ws("Announcements").get_all_records()
+
+    if not data:
+        st.info("No announcements yet.")
+    else:
+        st.markdown("### Latest Updates")
+        for row in reversed(data):
+            st.markdown(f"""
+                <div style="background:#fff1d6; padding:15px; border-left:6px solid #800000; border-radius:6px; margin-bottom:12px;">
+                    <h4 style="color:#800000;">{row.get('title','')}</h4>
+                    <p>{row.get('message','')}</p>
+                    <span style="font-size:12px; color:#555;">{row.get('timestamp','')}</span>
+                </div>
+            """, unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.subheader("🔐 Admin — Add Announcement")
+
+    pin = st.text_input("Enter Admin PIN", type="password")
+
+    if pin == st.secrets["ADMIN_PIN"]:
+        with st.form("ann_form"):
+            title = st.text_input("Title")
+            msg = st.text_area("Message")
+            aud = st.text_input("Audience (optional)")
+            post = st.form_submit_button("Post Announcement")
+
+        if post:
+            if not title or not msg:
+                st.error("Title and message are required.")
+            else:
+                ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                ws("Announcements").append_row([ts, title, msg, aud])
+                st.success("Announcement added!")
+                st.experimental_rerun()
+    else:
+        st.caption("Enter Admin PIN to post announcements.")
+
+# -------------------------------
+# GALLERY PAGE
+# -------------------------------
+def gallery():
+    st.header("🖼 Gallery")
+    data = ws("Gallery").get_all_records()
+
+    if data:
+        classes = ["All"] + sorted({r["class"] for r in data if r["class"]})
+        sel = st.selectbox("Filter by Class", classes)
+
+        filtered = data if sel == "All" else [r for r in data if r["class"] == sel]
+
+        for r in filtered:
+            st.markdown(f"""
+                <div style="background:#fff1d6; padding:15px; border-radius:10px; border:2px solid #800000; margin-bottom:15px;">
+                    <img src="{r['image_url']}" style="width:100%; border-radius:10px;">
+                    <h4 style="color:#800000;">{r['title']}</h4>
+                    <p><b>Class:</b> {r['class']}</p>
+                    <span style="font-size:12px; color:#555;">{r['timestamp']}</span>
+                </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.info("Gallery is empty.")
+
+    st.markdown("---")
+    st.subheader("🔐 Admin — Add Photo")
+
+    pin = st.text_input("Admin PIN", type="password")
+
+    if pin == st.secrets["ADMIN_PIN"]:
+        with st.form("pic_form"):
+            title = st.text_input("Caption")
+            cls = st.selectbox("Class", ["6","7","8","9","10","11","12"])
+            img = st.text_input("Image URL (from Google Drive)")
+            add = st.form_submit_button("Add Photo")
+
+        if add:
+            if not img:
+                st.error("Image URL is required.")
+            else:
+                ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                ws("Gallery").append_row([ts, title, cls, img])
+                st.success("Photo added!")
+                st.experimental_rerun()
+    else:
+        st.caption("Enter Admin PIN to upload.")
+
+# -------------------------------
+# REGISTRATION PAGE
+# -------------------------------
+def registration():
+    st.header("📝 Event Registration")
+    st.markdown("""
+        <div style="background:#fff1d6; padding:15px; border-left:6px solid #800000; border-radius:6px;">
+            Please enter correct details. Entries will be visible to coordinators.
+        </div>
+    """, unsafe_allow_html=True)
+
+    events = ["Skit","Dance","Mime","Volunteer","Anchor","Choir","Special Item"]
+    classes = [str(i) for i in range(6, 13)]
+    secs = ["A","B","C","D","E"]
+
+    with st.form("reg_form"):
+        name = st.text_input("Student Name")
+        col1, col2 = st.columns(2)
+        cls = col1.selectbox("Class", classes)
+        sec = col2.selectbox("Section", secs)
+        event = st.selectbox("Select Item / Event", events)
+        phone = st.text_input("Contact Number (Optional)")
+        submit = st.form_submit_button("Submit")
+
+    if submit:
+        if not name:
+            st.error("Student Name required.")
+        else:
+            ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            ws("Registrations").append_row([ts, name, cls, sec, event, phone])
+            st.success("Registration submitted!")
+            st.balloons()
+
+# -------------------------------
+# MAIN APP NAVIGATION
+# -------------------------------
+st.sidebar.title("SPECTRA 2025")
+menu = ["Home","Announcements","Gallery","Registration"]
+
+choice = st.sidebar.radio("Navigate", menu)
+
+if choice == "Home":
+    home()
+elif choice == "Announcements":
+    announcements()
+elif choice == "Gallery":
+    gallery()
+elif choice == "Registration":
+    registration()
